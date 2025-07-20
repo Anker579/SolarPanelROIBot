@@ -31,4 +31,18 @@ class geocoder():
             return [latitude, longitude]
         except response.status_code != 200:
             pass
+    
+    def check_is_UK(self, location):
+        #Check if the input latlong is in a box surrounding the UK, ie is in the UK
+        box1 = {"latlimits":[49.8820, 62.4], "longlimits":[-10.9, 0.0453]}
+        box2 = {"latlimits":[50.72, 55.72], "longlimits":[0.0453, 1.8199]}
+        latitude = location[0]
+        longitude = location[1]
+        if latitude <= box1["latlimits"[1]] and latitude >= box1["latlimits"[0]] and longitude <= box1["longlimits"[1]] and longitude >= box1["longlimits"[0]]:
+            return True
+        elif latitude <= box2["latlimits"[1]] and latitude >= box2["latlimits"[0]] and longitude <= box2["longlimits"[1]] and longitude >= box2["longlimits"[0]]:
+            return True
+        else:
+            return False
+        
 
