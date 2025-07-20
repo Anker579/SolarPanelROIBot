@@ -1,3 +1,5 @@
+# Solar Panel ROI Calculator
+## Hello, this is a app to allow the user to input their address and receive information about the estimated time for the a Solar Panel's ROI to pay for itself.
 ## General Notes
 ### Using the Solar API
 For Google's Solar API much of the UK is at "medium" resolution, most of scotland & ireland is missed out entirely.
