@@ -17,7 +17,6 @@ pyasn1==0.6.1
 pyasn1_modules==0.4.2
 pyparsing==3.2.3
 python-dotenv==1.1.1
-pywin32==307
 rsa==4.9.1
 setuptools==72.1.0
 soupsieve==2.7
