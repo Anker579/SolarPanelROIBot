@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 #load_dotenv()
 
-class solardatafetcher():
+class Solardatafetcher():
     def __init__(self):
         pass
 
@@ -24,6 +24,7 @@ class solardatafetcher():
         power_url = f"https://re.jrc.ec.europa.eu/api/v5_3/PVcalc?lat={latitude}&lon={longitude}&pvtechchoice={pv_technology}&raddatabase={database}&peakpower={peak_power}&loss={system_loss}&outputformat=json"
 
         response = requests.get(power_url).json()
+
         monthly_production = []
 
         for x in response["outputs"]["monthly"]["fixed"]:

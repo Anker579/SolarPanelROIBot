@@ -2,8 +2,9 @@ import streamlit as st
 from streamlit_folium import st_folium
 import folium
 import os
-from data.geocoder import geocoder
-from data.solardatafetcher import solardatafetcher
+from data.geocoder import Geocoder
+from data.solardatafetcher import Solardatafetcher
+from data.calculator import Calculator
 from dotenv import load_dotenv
 
 # Load and check API from env variables
@@ -12,8 +13,9 @@ api_key = os.getenv("GOOGLE_API_KEY")
 if not api_key:
     raise ValueError("API key not found. Make sure you have a .env file with GOOGLE_API_KEY set.")
 
-my_fetcher = solardatafetcher()
-my_geocoder = geocoder()
+my_fetcher = Solardatafetcher()
+my_geocoder = Geocoder()
+my_calculator = Calculator()
 
 st.set_page_config(layout="wide")
 st.set_page_config(
@@ -24,7 +26,7 @@ st.set_page_config(
 if "latlong" not in st.session_state:
     st.session_state.latlong = None
 
-st.title("Welcome to the Solar Panel Return on Investment Calculator")
+st.title("Welcome to the UK Solar Panel Return on Investment Calculator")
 st.write("This simple data app figures out the energy production of a given solar panel in your location, then uses the current energy price cap to compute your savings and from that the return on investment of the panels.")
 st.write("The first thing we'll need, where in the UK do you live?")
 
@@ -40,17 +42,11 @@ with map_col:
     if "selected_longitude" not in st.session_state:
         st.session_state.selected_longitude = None
     
-    # 1. Determine the map's center and zoom based on session state
-    # If coordinates from an address search exist, use them.
-    if st.session_state.get("latlong"):
-        map_center = st.session_state.latlong
-        zoom_level = 14 # Zoom in closer for a specific address
-    # Otherwise, use the default UK-wide view.
-    else:
-        map_center = [DEFAULT_LATITUDE, DEFAULT_LONGITUDE]
-        zoom_level = 7
 
-    # 2. Create the map using the dynamic center and zoom
+    zoom_level = 7
+    map_center = [DEFAULT_LATITUDE, DEFAULT_LONGITUDE]
+
+
     m = folium.Map(location=map_center, zoom_start=zoom_level)
 
     m.add_child(folium.LatLngPopup())
@@ -61,6 +57,7 @@ with map_col:
     if f_map.get("last_clicked"):
         st.session_state.selected_latitude = f_map["last_clicked"]["lat"]
         st.session_state.selected_longitude = f_map["last_clicked"]["lng"]
+        st.session_state.latlong = [st.session_state.selected_latitude, st.session_state.selected_longitude]
 
     # This block displays the stored coordinates from a click
     if st.session_state.selected_latitude and st.session_state.selected_longitude:
@@ -88,7 +85,7 @@ with address_col:
 
     if st.session_state.latlong:
         st.write("#### Your latitude and longitude is:")
-        st.write(f"#### {st.session_state.latlong[0]},{st.session_state.latlong[1]}")
+        st.write(f"#### {round(st.session_state.latlong[0],4)},{round(st.session_state.latlong[1],4)}")
 
 st.write("Tell us some details about the Solar System you will be installing and your home")
 
@@ -109,7 +106,7 @@ user_tech_choice = colb.selectbox(
     options=list(tech_options.keys()),
     )
 details["system_cost"] = colc.number_input("How much will the Solar Panels & Installation cost in £")
-details["energy_cost"] = cold.number_input("How much do you pay for electricity in pencer per kWh")
+details["energy_cost"] = 10e-3 * cold.number_input("How much do you pay for electricity in pence per kWh")
 details["usage"] = cole.number_input("What is your average monthly energy usage across the year? (kWh)")
 
 details["pv_technology"] = tech_options[user_tech_choice]
@@ -127,11 +124,24 @@ else:
     location = st.session_state.latlong
 
 calculate = st.button(label="Calculate my ROI!")
+
+
 if calculate:
-    production = my_fetcher.PVGIS_request(location=location, sp_details=details)
-    #st.write(production)
-    monthly_saving = round(details["energy_cost"] * 10e-2 * production["month_average"], 2)
-    st.write(f"You will be saving £{monthly_saving} per month")
-    months_to_ROI = round(details["system_cost"] / monthly_saving, 2)
-    years_to_ROI = round(months_to_ROI/12, 2)
-    st.write(f"From your investment that means it will take {months_to_ROI} months or {years_to_ROI} years")
+    if st.session_state.latlong is None:
+        st.error("Please select a location on the map or enter an address to continue")
+    elif my_geocoder.check_is_UK(location=location):
+        production = my_fetcher.PVGIS_request(location=location, sp_details=details)
+        #st.write(production)
+        #st.write(production["month_average"])
+        #st.write(details["energy_cost"])
+
+        monthly_saving, export_profit, months_to_ROI, years_to_ROI = my_calculator.calculate_ROI(system_details=details, production=production)
+
+        st.write(export_profit)
+
+        st.write(f"You will be saving £{monthly_saving} per month")
+        st.write(f"Additionally, you will be making £{export_profit} per month from exporting excess energy to the grid")
+
+        st.write(f"That means it will take {months_to_ROI} months or {years_to_ROI} years to break even from your initial investment of £{details['system_cost']}")
+    else:
+        st.error("The location you have entered does not appear to be in the UK, please check your address or lap location")

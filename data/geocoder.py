@@ -7,7 +7,7 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
     raise ValueError("API key not found. Make sure you have a .env file with GOOGLE_API_KEY set.")
 
-class geocoder():
+class Geocoder():
     def __init__(self):
         pass
 
@@ -38,9 +38,9 @@ class geocoder():
         box2 = {"latlimits":[50.72, 55.72], "longlimits":[0.0453, 1.8199]}
         latitude = location[0]
         longitude = location[1]
-        if latitude <= box1["latlimits"[1]] and latitude >= box1["latlimits"[0]] and longitude <= box1["longlimits"[1]] and longitude >= box1["longlimits"[0]]:
+        if latitude <= box1["latlimits"][1] and latitude >= box1["latlimits"][0] and longitude <= box1["longlimits"][1] and longitude >= box1["longlimits"][0]:
             return True
-        elif latitude <= box2["latlimits"[1]] and latitude >= box2["latlimits"[0]] and longitude <= box2["longlimits"[1]] and longitude >= box2["longlimits"[0]]:
+        elif latitude <= box2["latlimits"][1] and latitude >= box2["latlimits"][0] and longitude <= box2["longlimits"][1] and longitude >= box2["longlimits"][0]:
             return True
         else:
             return False
